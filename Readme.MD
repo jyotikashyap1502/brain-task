@@ -7,7 +7,7 @@ Follow these steps to run the project locally:
 1. Navigate to the project directory:
 
 ```bash
-cd path/to/trend 
+cd path/to/brain-task 
 ```
 
 2. Install the `serve` package globally:
@@ -39,6 +39,7 @@ docker build -t brain-task-app:latest .
 docker run -d -p 3000:80 brain-task-app:latest
 
 # go to the browser and test it.
-test the project on localhost
+test the project on localhost:30000
+
 
 
