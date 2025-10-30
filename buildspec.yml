@@ -27,6 +27,13 @@ phases:
       - printf '[{"name":"brain-tasks","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
       - echo Updating Kubernetes deployment...
       - sed -i "s|590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:.*|$REPOSITORY_URI:$IMAGE_TAG|g" k8s/deployment.yaml
+      - echo Configuring kubectl...
+      - aws eks update-kubeconfig --region ap-south-1 --name brain-tasks-cluster
+      - echo Deploying to EKS...
+      - kubectl apply -f k8s/deployment.yaml
+      - kubectl rollout status deployment/brain-tasks-deployment --timeout=5m
+      - kubectl get pods
+      - kubectl get svc brain-tasks-service
 
 artifacts:
   files:
