@@ -4,27 +4,32 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - REPOSITORY_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/brain-tasks-app
+      - aws --version
+      - REPOSITORY_URI=590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $REPOSITORY_URI
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=${COMMIT_HASH:=latest}
-
+      
   build:
     commands:
       - echo Build started on `date`
-      - docker build -t $REPOSITORY_URI:latest .
+      - echo Building the Docker image with platform linux/amd64...
+      - docker build --platform linux/amd64 -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
-
+      
   post_build:
     commands:
       - echo Build completed on `date`
+      - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
+      - echo Writing image definitions file...
       - printf '[{"name":"brain-tasks","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+      - echo Updating Kubernetes deployment...
+      - sed -i "s|590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:.*|$REPOSITORY_URI:$IMAGE_TAG|g" k8s/deployment.yaml
 
 artifacts:
   files:
     - imagedefinitions.json
     - k8s/deployment.yaml
     - k8s/service.yaml
-
