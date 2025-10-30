@@ -381,5 +381,6 @@ curl http://$(kubectl get service brain-tasks-service -o jsonpath='{.status.load
 kubectl get pods -o jsonpath='{.items[*].status.phase}'
 
 
-
+# Brain Tasks App - CI/CD Enabled
+Testing 
 
