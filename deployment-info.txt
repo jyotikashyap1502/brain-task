@@ -1,0 +1,75 @@
+🧠 Brain Tasks App - Kubernetes Deployment Info
+
+AWS Account ID: 590183809782
+Region: ap-south-1 (Mumbai)
+
+🐳 ECR Repository
+590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+
+☸️ EKS Cluster
+Name: brain-tasks-cluster
+Region: ap-south-1
+
+🌐 Application URL
+http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+
+✅ Application accessible and rendering correctly in browser.
+
+⚙️ LoadBalancer Details
+LoadBalancer Name: ad298fe685d5f43509fc92ad2350a0f6
+LoadBalancer ARN: arn:aws:elasticloadbalancing:ap-south-1:590183809782:loadbalancer/net/ad298fe685d5f43509fc92ad2350a0f6/vpc-0421edd09072314bb
+VPC ID: vpc-0421edd09072314bb
+Type: classic (ELB)
+DNS: ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+🧩 Kubernetes Resources
+
+Deployment
+
+Name: brain-tasks-deployment
+
+Replicas: 2
+
+Image: 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+
+Port: 3000/TCP
+
+Strategy: RollingUpdate
+
+Status: ✅ Available (2/2 replicas running)
+
+Service
+
+Name: brain-tasks-service
+
+Type: LoadBalancer
+
+Cluster IP: 10.100.25.172
+
+External IP (DNS): ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+Port Mapping: 80 → 3000
+
+NodePort: 32213
+
+Pods
+
+1. brain-tasks-deployment-54d75b664b-66bnm   (192.168.73.229)
+2. brain-tasks-deployment-54d75b664b-sswn6   (192.168.53.170)
+
+
+Both in Running state ✅
+
+📅 Deployment Date
+
+October 30, 2025
+
+✅ Verification
+
+Command executed successfully:
+
+curl http://$(kubectl get service brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+
+Returned HTML page with <title>Brain Task</title> — confirming app is live.
