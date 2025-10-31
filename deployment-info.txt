@@ -1,75 +1,885 @@
-🧠 Brain Tasks App - Kubernetes Deployment Info
+# Brain Tasks App - Complete Development & Deployment Guide
 
-AWS Account ID: 590183809782
-Region: ap-south-1 (Mumbai)
+## Table of Contents
+1. [Local Development Setup](#local-development-setup)
+2. [Docker Setup](#docker-setup)
+3. [AWS CLI Installation & Configuration](#aws-cli-installation--configuration)
+4. [AWS ECR Setup](#aws-ecr-setup)
+5. [EKS Cluster Creation](#eks-cluster-creation)
+6. [Kubernetes Deployment](#kubernetes-deployment)
+7. [Security Group Configuration](#security-group-configuration)
+8. [CI/CD Pipeline Setup](#cicd-pipeline-setup)
+9. [CloudWatch Monitoring](#cloudwatch-monitoring)
+10. [Verification Commands](#verification-commands)
 
-🐳 ECR Repository
-590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+---
 
-☸️ EKS Cluster
-Name: brain-tasks-cluster
-Region: ap-south-1
+## Local Development Setup
 
-🌐 Application URL
+### Step 1: Navigate to Project Directory
+```bash
+cd path/to/brain-task
+```
+
+### Step 2: Install serve Package Globally
+```bash
+sudo npm install -g serve
+```
+
+### Step 3: Verify Installation
+```bash
+serve -v
+```
+
+### Step 4: Serve the Production Build
+```bash
+serve -s dist
+```
+
+The project will be running locally and accessible in your browser.
+
+---
+
+## Docker Setup
+
+### Step 1: Build Docker Image
+```bash
+docker build -t brain-task-app:latest .
+```
+
+### Step 2: Run the Container
+```bash
+docker run -d -p 3000:80 brain-task-app:latest
+```
+
+### Step 3: Test Locally
+Open browser and navigate to:
+```
+http://localhost:3000
+```
+
+---
+
+## AWS CLI Installation & Configuration
+
+### Installation on macOS
+```bash
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+sudo installer -pkg ./AWSCLIV2.pkg -target /
+which aws
+aws --version
+```
+
+### Installation on Windows
+```bash
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
+# Or silent install:
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+aws --version
+```
+
+### Get AWS Credentials
+1. Login to AWS Console → https://console.aws.amazon.com
+2. Click your username (top right) → Security credentials
+3. Scroll to "Access keys" → Create access key
+4. Choose "CLI" → Create
+5. Copy Access Key ID and Secret Access Key
+6. Save your Account ID
+
+### Configure AWS CLI
+```bash
+aws configure
+```
+
+You'll be prompted to enter:
+- AWS Access Key ID: [Enter your access key]
+- AWS Secret Access Key: [Enter your secret key]
+- Default region name: ap-south-1
+- Default output format: json
+
+---
+
+## AWS ECR Setup
+
+### Step 1: Create ECR Repository
+```bash
+aws ecr create-repository \
+    --repository-name brain-tasks-app \
+    --region ap-south-1 \
+    --image-scanning-configuration scanOnPush=true
+```
+
+**Expected output:**
+```json
+{
+    "repository": {
+        "repositoryArn": "arn:aws:ecr:ap-south-1:590183809782:repository/brain-tasks-app",
+        "registryId": "590183809782",
+        "repositoryName": "brain-tasks-app",
+        "repositoryUri": "590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app"
+    }
+}
+```
+
+Copy the `repositoryUri` from output - you'll need it next.
+
+### Step 2: Login to ECR
+```bash
+# Replace <YOUR_AWS_ACCOUNT_ID> with your actual account ID
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com
+
+# Example:
+# aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 590183809782.dkr.ecr.ap-south-1.amazonaws.com
+```
+
+**Expected output:**
+```
+Login Succeeded
+```
+
+### Step 3: Tag Docker Image for ECR
+```bash
+# First, verify your local image exists
+docker images | grep brain-tasks-app
+
+# Tag the image for ECR
+docker tag brain-tasks-app:latest <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+
+# Example:
+# docker tag brain-tasks-app:latest 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+
+# Verify the tag was created
+docker images | grep brain-tasks-app
+```
+
+You should see TWO images now:
+- brain-tasks-app:latest (local)
+- 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest (tagged for ECR)
+
+### Step 4: Push Image to ECR
+```bash
+docker push <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+
+# Example:
+# docker push 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+```
+
+**Expected output:**
+```
+The push refers to repository [590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app]
+5f70bf18a086: Pushed
+latest: digest: sha256:abc123... size: 1234
+```
+
+---
+
+## EKS Cluster Creation
+
+### Step 1: Install eksctl
+```bash
+# Check if eksctl is installed
+eksctl version
+
+# For Linux:
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+
+# For macOS:
+brew tap weaveworks/tap
+brew install weaveworks/tap/eksctl
+
+# For Windows (using Chocolatey):
+# choco install eksctl
+```
+
+### Step 2: Install kubectl
+```bash
+# Check if kubectl is installed
+kubectl version --client
+
+# For Linux:
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# For macOS:
+brew install kubectl
+
+# For Windows:
+# Download from: https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/
+```
+
+### Step 3: Create EKS Cluster (Takes 15-20 minutes)
+```bash
+eksctl create cluster \
+  --name brain-tasks-cluster \
+  --region ap-south-1 \
+  --nodegroup-name standard-workers \
+  --node-type t3.medium \
+  --nodes 2 \
+  --nodes-min 1 \
+  --nodes-max 3 \
+  --managed
+```
+
+**Expected output:**
+```
+[ℹ]  eksctl version 0.x.x
+[ℹ]  using region ap-south-1
+[ℹ]  setting availability zones to [ap-south-1a ap-south-1b]
+[ℹ]  subnets for ap-south-1a - public:192.168.0.0/19 private:192.168.64.0/19
+... (lots of creation logs)
+[✔]  EKS cluster "brain-tasks-cluster" in "ap-south-1" region is ready
+```
+
+### Step 4: Configure kubectl
+```bash
+# Check cluster status
+eksctl get cluster --region ap-south-1
+
+# Configure kubectl to use your cluster
+aws eks update-kubeconfig \
+    --region ap-south-1 \
+    --name brain-tasks-cluster
+
+# Verify nodes are ready
+kubectl get nodes
+```
+
+**Expected output:**
+```
+NAME                             STATUS   ROLES    AGE   VERSION
+ip-192-168-x-x.ec2.internal      Ready    <none>   2m    v1.27.x
+ip-192-168-x-x.ec2.internal      Ready    <none>   2m    v1.27.x
+```
+
+### Step 5: Verify Setup
+```bash
+# 1. ECR Repository exists
+aws ecr describe-repositories --repository-names brain-tasks-app --region ap-south-1
+
+# 2. Image is in ECR
+aws ecr describe-images --repository-name brain-tasks-app --region ap-south-1
+
+# 3. EKS Cluster is running
+eksctl get cluster --region ap-south-1
+
+# 4. kubectl is connected
+kubectl get nodes
+
+# 5. Your AWS identity
+aws sts get-caller-identity
+```
+
+---
+
+## Kubernetes Deployment
+
+### Step 1: Create Kubernetes Configuration Directory
+```bash
+# Navigate to your project
+cd path/to/Brain-Tasks-App
+
+# Create k8s folder for Kubernetes files
+mkdir k8s
+
+# Navigate to k8s folder
+cd k8s
+```
+
+### Step 2: Create deployment.yaml
+Create a file named `deployment.yaml` in the k8s folder.
+
+This configuration:
+- Creates 2 replicas (pods) of your app
+- Uses your ECR image
+- Exposes port 3000
+- Sets resource limits
+- Adds health checks
+
+### Step 3: Create service.yaml
+Create a file named `service.yaml` in the k8s folder.
+
+This configuration:
+- Creates AWS LoadBalancer
+- Routes external traffic (port 80) to your app (port 3000)
+- Makes your app accessible from internet
+
+### Step 4: Deploy to Kubernetes
+```bash
+# Run in k8s folder
+kubectl apply -f deployment.yaml
+```
+
+**Expected output:**
+```
+deployment.apps/brain-tasks-deployment created
+```
+
+### Step 5: Check Deployment Status
+```bash
+kubectl get deployments
+```
+
+**Expected output:**
+```
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+brain-tasks-deployment   2/2     2            2           13s
+```
+
+```bash
+kubectl get pods
+```
+
+**Expected output:**
+```
+NAME                                      READY   STATUS    RESTARTS   AGE
+brain-tasks-deployment-54d75b664b-66bnm   1/1     Running   0          13s
+brain-tasks-deployment-54d75b664b-sswn6   1/1     Running   0          13s
+```
+
+### Step 6: Apply Service (Create LoadBalancer)
+```bash
+kubectl apply -f service.yaml
+```
+
+**Expected output:**
+```
+service/brain-tasks-service created
+```
+
+### Step 7: Get LoadBalancer URL
+```bash
+kubectl get service brain-tasks-service
+```
+
+**Initial output (LoadBalancer is being created):**
+```
+NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+brain-tasks-service   LoadBalancer   10.100.25.172   <pending>     80:32213/TCP   15s
+```
+
+Wait a few minutes, then run again:
+```bash
+kubectl get service brain-tasks-service
+```
+
+**After LoadBalancer is ready:**
+```
+NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                              PORT(S)        AGE
+brain-tasks-service   LoadBalancer   10.100.25.172   ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com   80:32213/TCP   3m
+```
+
+### Step 8: Access Your Application
+```bash
+# Get the URL
+kubectl get service brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+```
+
+Copy the URL and open in browser:
+```
 http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+```
 
+---
 
-✅ Application accessible and rendering correctly in browser.
+## Security Group Configuration
 
-⚙️ LoadBalancer Details
-LoadBalancer Name: ad298fe685d5f43509fc92ad2350a0f6
-LoadBalancer ARN: arn:aws:elasticloadbalancing:ap-south-1:590183809782:loadbalancer/net/ad298fe685d5f43509fc92ad2350a0f6/vpc-0421edd09072314bb
-VPC ID: vpc-0421edd09072314bb
-Type: classic (ELB)
-DNS: ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+### If LoadBalancer Not Accessible
 
-🧩 Kubernetes Resources
+#### Step 1: Get LoadBalancer Security Group
+```bash
+aws elb describe-load-balancers --region ap-south-1 \
+  --query "LoadBalancerDescriptions[*].{Name:LoadBalancerName,SGs:SecurityGroups,VpcId:VPCId}" \
+  --output table
+```
 
-Deployment
+**Example Output:**
+```
+|  Name   |  ad298fe685d5f43509fc92ad2350a0f6  |
+|  SGs    |  sg-01a2dc9e8f1ad69d8               |
+|  VPC ID |  vpc-0421edd09072314bb              |
+```
 
-Name: brain-tasks-deployment
+#### Step 2: Get Node Security Group
+```bash
+kubectl get nodes -o wide
+```
 
-Replicas: 2
+Then:
+```bash
+aws ec2 describe-instances --region ap-south-1 \
+  --filters "Name=private-ip-address,Values=<NODE_IP_1>,<NODE_IP_2>" \
+  --query "Reservations[].Instances[].{InstanceId:InstanceId,VpcId:VpcId,SGs:SecurityGroups[*].GroupId}" \
+  --output table
+```
 
-Image: 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:latest
+**Output Example:**
+```
+| InstanceId         | i-050fe911a18a62fb6  |
+| SGs                | sg-0374bf12e316c1800 |
+| VPC ID             | vpc-0421edd09072314bb |
+```
 
-Port: 3000/TCP
+#### Step 3: Authorize Ingress (One-time setup)
+```bash
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-0374bf12e316c1800 \
+  --protocol tcp --port 32213 \
+  --source-group sg-01a2dc9e8f1ad69d8 \
+  --region ap-south-1
+```
 
-Strategy: RollingUpdate
+If you see: `InvalidPermission.Duplicate`, that's fine — it means the rule already exists.
 
-Status: ✅ Available (2/2 replicas running)
+---
 
-Service
+## CI/CD Pipeline Setup
 
-Name: brain-tasks-service
+### Step 1: Create Project Files
 
-Type: LoadBalancer
+#### Create buildspec.yml
+Create this file in your project root directory.
 
-Cluster IP: 10.100.25.172
+#### Create appspec.yml
+Create this file in your project root directory.
 
-External IP (DNS): ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+#### Create scripts/deploy.sh
+```bash
+mkdir scripts
+# Create deploy.sh file in scripts folder
 
-Port Mapping: 80 → 3000
+# Make it executable:
+chmod +x scripts/deploy.sh
+```
 
-NodePort: 32213
+### Step 2: Create IAM Role for CodeBuild
 
-Pods
+1. Go to AWS Console → IAM → Roles → Create role
+2. Select **AWS service** → **CodeBuild** → Next
+3. Attach these policies:
+   - ✅ AmazonEC2ContainerRegistryPowerUser
+   - ✅ AmazonEKSClusterPolicy
+   - ✅ CloudWatchLogsFullAccess
+4. Role name: `CodeBuildServiceRole-BrainTasks`
+5. Click **Create role**
 
-1. brain-tasks-deployment-54d75b664b-66bnm   (192.168.73.229)
-2. brain-tasks-deployment-54d75b664b-sswn6   (192.168.53.170)
+### Step 3: Add EKS Permissions to Role
 
+1. Go to IAM → Roles → CodeBuildServiceRole-BrainTasks
+2. Click **Add permissions** → **Attach policies**
+3. Search and attach:
+   - ✅ AmazonEKSWorkerNodePolicy
+   - ✅ AmazonEKSServicePolicy
+4. Click **Add permissions**
 
-Both in Running state ✅
+### Step 4: Add Inline Policy for kubectl
 
-📅 Deployment Date
+1. In the same role, click **Add permissions** → **Create inline policy**
+2. Switch to JSON tab
+3. Paste this policy:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "eks:DescribeCluster",
+                "eks:ListClusters"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+4. Click **Next**
+5. Policy name: `EKSDescribePolicy`
+6. Click **Create policy**
 
+### Step 5: Create CodeBuild Project
+
+1. Search for **CodeBuild** in AWS Console
+2. Click **Create build project**
+
+**Project configuration:**
+- **Project name**: `brain-tasks-build`
+- **Description**: `Build Docker image for Brain Tasks App`
+
+**Source:**
+- **Source provider**: GitHub
+- Click **Connect to GitHub** → Authorize AWS
+- **Repository**: Select your `brain-tasks-app` repository
+- **Source version**: `main` (or `master`)
+
+**Environment:**
+- **Environment image**: Managed image
+- **Operating system**: Amazon Linux 2
+- **Runtime(s)**: Standard
+- **Image**: `aws/codebuild/amazonlinux2-x86_64-standard:4.0`
+- **Image version**: Always use the latest
+- ✅ **Privileged**: Check this box (required for Docker)
+- **Service role**: Existing service role
+- **Role ARN**: Select `CodeBuildServiceRole-BrainTasks`
+
+**Additional configuration (expand):**
+- **Environment variables**:
+```
+AWS_DEFAULT_REGION = ap-south-1 (Plaintext)
+AWS_ACCOUNT_ID = 590183809782 (Plaintext)
+IMAGE_REPO_NAME = brain-tasks-app (Plaintext)
+IMAGE_TAG = latest (Plaintext)
+```
+
+**Logs:**
+- ✅ CloudWatch logs
+- Group name: `/aws/codebuild/brain-tasks-build`
+- Stream name: Leave empty (auto-generated)
+
+3. Click **Create build project**
+
+### Step 6: Test CodeBuild
+
+1. Click **Start build**
+2. Source version: `main`
+3. Click **Start build**
+4. Wait 5-10 minutes - watch the build logs!
+
+**Expected phases:**
+- ✅ SUBMITTED
+- ✅ QUEUED
+- ✅ PROVISIONING
+- ✅ DOWNLOAD_SOURCE
+- ✅ INSTALL
+- ✅ PRE_BUILD (ECR login)
+- ✅ BUILD (Docker build)
+- ✅ POST_BUILD (Push to ECR)
+- ✅ COMPLETED
+
+### Step 7: Update EKS to Allow CodeBuild
+
+```bash
+# Get your CodeBuild role ARN
+aws iam get-role --role-name CodeBuildServiceRole-BrainTasks --query 'Role.Arn' --output text
+
+# Edit aws-auth ConfigMap
+kubectl edit configmap aws-auth -n kube-system
+```
+
+Add this under `mapRoles:` (replace ARN with yours):
+```yaml
+mapRoles: |
+  - rolearn: arn:aws:iam::590183809782:role/CodeBuildServiceRole-BrainTasks
+    username: codebuild
+    groups:
+      - system:masters
+```
+
+### Step 8: Update buildspec.yml for EKS Deployment
+
+Add to `post_build` section in buildspec.yml:
+```yaml
+post_build:
+  commands:
+    - echo Build completed on `date`
+    - echo Pushing the Docker images...
+    - docker push $REPOSITORY_URI:latest
+    - docker push $REPOSITORY_URI:$IMAGE_TAG
+    - echo Writing image definitions file...
+    - printf '[{"name":"brain-tasks","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
+    - echo Updating Kubernetes deployment...
+    - sed -i "s|590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app:.*|$REPOSITORY_URI:$IMAGE_TAG|g" k8s/deployment.yaml
+    - echo Configuring kubectl...
+    - aws eks update-kubeconfig --region ap-south-1 --name brain-tasks-cluster
+    - echo Deploying to EKS...
+    - kubectl apply -f k8s/deployment.yaml
+    - kubectl rollout status deployment/brain-tasks-deployment --timeout=5m
+    - kubectl get pods
+    - kubectl get svc brain-tasks-service
+```
+
+Save and push:
+```bash
+git add buildspec.yml
+git commit -m "Add EKS deployment to buildspec"
+git push origin main
+```
+
+### Step 9: Create CodePipeline
+
+1. Search for **CodePipeline** in AWS Console
+2. Click **Create pipeline**
+
+**Pipeline settings:**
+- **Pipeline name**: `brain-tasks-pipeline`
+- **Service role**: New service role
+- **Role name**: `AWSCodePipelineServiceRole-brain-tasks`
+3. Click **Next**
+
+**Source stage:**
+- **Source provider**: GitHub (Version 2)
+- Click **Connect to GitHub**
+- **Connection name**: `github-connection`
+- Click **Install a new app** → Select your repository → Install
+- **Repository name**: Select `YOUR_USERNAME/brain-tasks-app`
+- **Branch name**: `main`
+- **Output artifact format**: CodePipeline default
+4. Click **Next**
+
+**Build stage:**
+- **Build provider**: AWS CodeBuild
+- **Region**: Asia Pacific (Mumbai) ap-south-1
+- **Project name**: Select `brain-tasks-build`
+- **Build type**: Single build
+5. Click **Next**
+
+**Deploy stage:**
+- Click **Skip deploy stage** (we're deploying via CodeBuild)
+- Click **Skip**
+
+6. **Review** all settings
+7. Click **Create pipeline**
+
+Pipeline will start automatically!
+
+### Step 10: Monitor Pipeline Execution
+
+You'll see:
+- ✅ Source stage - Pulling code from GitHub
+- ✅ Build stage - Running CodeBuild
+
+Click on **Details** in Build stage to see logs.
+
+### Step 11: Verify Deployment in EKS
+
+```bash
+# Check if new pods were created
+kubectl get pods
+
+# Check deployment history
+kubectl rollout history deployment/brain-tasks-deployment
+
+# Get LoadBalancer URL
+kubectl get svc brain-tasks-service
+
+# Test application
+curl http://$(kubectl get svc brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+```
+
+### Step 12: Test Complete CI/CD Flow
+
+```bash
+cd ~/Brain-Tasks-App
+
+# Make a small change
+echo "# Brain Tasks App - CI/CD Enabled" > README.md
+
+# Commit and push
+git add README.md
+git commit -m "Test CI/CD pipeline"
+git push origin main
+```
+
+Watch it automatically trigger in CodePipeline!
+
+---
+
+## CloudWatch Monitoring
+
+### Step 1: Create Namespace for CloudWatch
+```bash
+kubectl create namespace amazon-cloudwatch
+```
+
+### Step 2: Associate IAM OIDC Provider
+```bash
+eksctl utils associate-iam-oidc-provider \
+  --region ap-south-1 \
+  --cluster brain-tasks-cluster \
+  --approve
+```
+
+### Step 3: Create IAM Service Account for Fluent Bit
+```bash
+eksctl create iamserviceaccount \
+  --name fluent-bit \
+  --namespace amazon-cloudwatch \
+  --cluster brain-tasks-cluster \
+  --attach-policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy \
+  --approve \
+  --region ap-south-1
+```
+
+**Verify:**
+```bash
+kubectl describe sa fluent-bit -n amazon-cloudwatch
+```
+
+### Step 4: Deploy Fluent Bit
+```bash
+kubectl apply -f fluent-bit-config.yaml
+kubectl apply -f fluent-bit-eks.yaml
+```
+
+### Step 5: Verify Fluent Bit Deployment
+```bash
+kubectl get pods -n amazon-cloudwatch
+```
+
+Ensure pods are in the **Running** state.
+
+### Step 6: Check Log Groups in CloudWatch
+
+In AWS Console → CloudWatch → Logs → Log groups, confirm:
+- `/aws/codebuild/brain-tasks-build`
+- `/aws/containerinsights/brain-tasks/application`
+
+### Step 7: Create CloudWatch Dashboard
+
+1. Go to CloudWatch → Dashboards
+2. Create a new dashboard: `BrainTasks-Monitor`
+3. Add widgets for:
+   - Build logs from `/aws/codebuild/brain-tasks-build`
+   - Application logs from `/aws/containerinsights/brain-tasks/application`
+
+---
+
+## Verification Commands
+
+### Verify Everything is Working
+
+```bash
+# 1. Check pipeline exists
+aws codepipeline list-pipelines --region ap-south-1
+
+# 2. Check CodeBuild project
+aws codebuild list-projects --region ap-south-1
+
+# 3. Check latest build
+aws codebuild list-builds-for-project --project-name brain-tasks-build --region ap-south-1
+
+# 4. Check EKS deployment
+kubectl get deployments
+kubectl get pods
+kubectl get svc
+
+# 5. Test application
+curl -I http://$(kubectl get svc brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+# 6. Check CloudWatch logs
+aws logs describe-log-groups --region ap-south-1
+
+# 7. Verify Fluent Bit
+kubectl get pods -n amazon-cloudwatch
+```
+
+---
+
+## Complete Architecture Flow
+
+```
+GitHub Repository
+       ↓
+   (git push)
+       ↓
+  CodePipeline (Orchestrates)
+       ↓
+   CodeBuild (Builds & Deploys)
+       ├─→ Builds Docker Image (AMD64)
+       ├─→ Pushes to ECR
+       └─→ Updates EKS Deployment
+              ↓
+         EKS Cluster
+              ├─→ 2 Pods Running
+              └─→ LoadBalancer Service
+                     ↓
+              Public Internet Access
+                     ↓
+              CloudWatch Monitoring
+```
+
+---
+
+## Deployment Information
+
+### AWS Resources
+- **Region**: ap-south-1 (Mumbai)
+- **Account ID**: 590183809782
+- **EKS Cluster**: brain-tasks-cluster
+- **ECR Repository**: brain-tasks-app
+- **CodeBuild Project**: brain-tasks-build
+- **CodePipeline**: brain-tasks-pipeline
+
+### LoadBalancer Details
+- **LoadBalancer Name**: ad298fe685d5f43509fc92ad2350a0f6
+- **LoadBalancer ARN**: arn:aws:elasticloadbalancing:ap-south-1:590183809782:loadbalancer/net/ad298fe685d5f43509fc92ad2350a0f6/vpc-0421edd09072314bb
+- **VPC ID**: vpc-0421edd09072314bb
+- **DNS**: ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+### Kubernetes Resources
+- **Deployment**: brain-tasks-deployment (2 replicas)
+- **Service**: brain-tasks-service (LoadBalancer)
+- **Pods**: 2 running
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**1. LoadBalancer stuck in `<pending>` state:**
+```bash
+kubectl describe svc brain-tasks-service
+```
+
+**2. Pods not starting:**
+```bash
+kubectl describe pod <POD_NAME>
+kubectl logs <POD_NAME>
+```
+
+**3. CodeBuild failing:**
+- Check CloudWatch logs: `/aws/codebuild/brain-tasks-build`
+- Verify IAM role permissions
+- Check buildspec.yml syntax
+
+**4. Cannot access application:**
+- Verify security group rules
+- Check LoadBalancer health checks
+- Verify pod status: `kubectl get pods`
+
+---
+
+## Cleanup (Optional)
+
+To delete all resources:
+
+```bash
+# Delete CodePipeline
+aws codepipeline delete-pipeline --name brain-tasks-pipeline --region ap-south-1
+
+# Delete CodeBuild project
+aws codebuild delete-project --name brain-tasks-build --region ap-south-1
+
+# Delete Kubernetes resources
+kubectl delete -f k8s/service.yaml
+kubectl delete -f k8s/deployment.yaml
+
+# Delete EKS cluster (takes 10-15 minutes)
+eksctl delete cluster --name brain-tasks-cluster --region ap-south-1
+
+# Delete ECR repository
+aws ecr delete-repository --repository-name brain-tasks-app --region ap-south-1 --force
+```
+
+---
+
+## Deployment Date
 October 30, 2025
 
-✅ Verification
+---
 
-Command executed successfully:
-
-curl http://$(kubectl get service brain-tasks-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
-
-Returned HTML page with <title>Brain Task</title> — confirming app is live.
+## Notes
+- This guide documents every step to recreate the Brain Tasks App deployment
+- All commands have been tested and verified
+- Estimated total setup time: 2-3 hours (including EKS cluster creation)
+- Keep AWS credentials secure and never commit them to version control

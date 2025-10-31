@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: amazon-cloudwatch
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Daemon       Off
+        Log_Level    info
+        Parsers_File parsers.conf
+
+    @INCLUDE application-log.conf
+    @INCLUDE host-log.conf
+    # @INCLUDE dataplane-log.conf  <-- Removed (was causing crash)
+
+  application-log.conf: |
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        Parser            docker
+        Tag               application.*
+        Refresh_Interval  5
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match   application.*
+        region  ap-south-1
+        log_group_name  /aws/containerinsights/brain-tasks/application
+        log_stream_prefix  from-fluent-bit-
+        auto_create_group true
+
+  host-log.conf: |
+    [INPUT]
+        Name tail
+        Path /var/log/messages
+        Tag host.*
+        Refresh_Interval 5
+
+    [OUTPUT]
+        Name cloudwatch_logs
+        Match host.*
+        region ap-south-1
+        log_group_name /aws/containerinsights/brain-tasks/host
+        log_stream_prefix from-fluent-bit-
+        auto_create_group true
+
+  parsers.conf: |
+    [PARSER]
+        Name   docker
+        Format json
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
