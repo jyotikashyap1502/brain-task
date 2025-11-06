@@ -950,19 +950,7 @@ If you encounter issues not covered here:
 - **AWS Console**: https://console.aws.amazon.com (Region: ap-south-1)
 - **ECR Repository**: 590183809782.dkr.ecr.ap-south-1.amazonaws.com/brain-tasks-app
 
-### Cost Optimization
 
-**Estimated Monthly Costs (ap-south-1 region):**
-
-| Resource | Estimated Cost |
-|----------|----------------|
-| EKS Cluster | ~$73/month ($0.10/hour) |
-| EC2 Instances (2x t3.medium) | ~$60/month |
-| Load Balancer | ~$20/month |
-| ECR Storage | ~$1/month (< 10GB) |
-| Data Transfer | ~$5/month (minimal) |
-| CloudWatch Logs | ~$2/month |
-| **Total** | **~$161/month** |
 
 **Cost Optimization Tips:**
 - Use Spot Instances for non-production environments
@@ -1332,7 +1320,7 @@ http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
 All infrastructure and application checks are automated via a custom health check script.
 
 **Command:**
-```bash
+
 ./brain-tasks-health-check.sh
 
 ## 📸 Deployment & Verification Screenshots
