@@ -1327,4 +1327,43 @@ http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
 **Deployment Status:** Active ✅
 
 
+## ✅ Automated Project Validation
+
+All infrastructure and application checks are automated via a custom health check script.
+
+**Command:**
+```bash
+./brain-tasks-health-check.sh
+
+## 📸 Deployment & Verification Screenshots
+
+### 🧠 1️⃣ Application UI
+![Application UI](./screenshot/app-ui.png)  
+> ✅ The Brain Tasks App is successfully running and accessible through the LoadBalancer URL.
+
+---
+
+### ☸️ 2️⃣ EKS Cluster & Instances
+![EKS Cluster Instance](./screenshot/brain-tasks-cluster-instance.png)  
+> ✅ The EKS cluster and worker nodes are active and in a Ready state.
+
+---
+
+### 🪵 3️⃣ CloudWatch Application Logs
+![CloudWatch Application Log](./screenshot/cloudWatch-application-log.png)  
+> ✅ Application logs streamed via CloudWatch show clean execution with no runtime errors.
+
+---
+
+### 🪣 4️⃣ CloudWatch Build Logs
+![CloudWatch Build Log](./screenshot/cloudWatch-build-log.png)  
+> ✅ CodeBuild and CodePipeline build logs confirm that the latest build and deployment completed successfully.
+
+---
+
+### 🔍 5️⃣ Automated Health Check Script Output
+![Health Check Script Output](./screenshot/health_check_script-output.png)  
+> ✅ The automated validation script verifies all resources — EKS, Pods, Service, ECR, CodePipeline, and CloudWatch — are healthy and operational.
+
+
 
