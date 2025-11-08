@@ -1323,36 +1323,171 @@ All infrastructure and application checks are automated via a custom health chec
 
 ./brain-tasks-health-check.sh
 
-## 📸 Deployment & Verification Screenshots
 
-### 🧠 1️⃣ Application UI
-![Application UI](./screenshot/app-ui.png)  
-> ✅ The Brain Tasks App is successfully running and accessible through the LoadBalancer URL.
+## 📸 Complete CI/CD Pipeline & Deployment Screenshots
 
 ---
 
-### ☸️ 2️⃣ EKS Cluster & Instances
-![EKS Cluster Instance](./screenshot/brain-tasks-cluster-instance.png)  
-> ✅ The EKS cluster and worker nodes are active and in a Ready state.
+### 🐳 1️⃣ ECR Repository List
+![ECR Repository List](./screenshot/0a-ecr-repository-list.png)  
+> ✅ ECR repository `brain-tasks-app` successfully created in ap-south-1 region with image scanning enabled.
 
 ---
 
-### 🪵 3️⃣ CloudWatch Application Logs
-![CloudWatch Application Log](./screenshot/cloudWatch-application-log.png)  
-> ✅ Application logs streamed via CloudWatch show clean execution with no runtime errors.
+### 🐳 2️⃣ ECR Images Stored
+![ECR Images Stored](./screenshot/0b-ecr-images-stored.png)  
+> ✅ Multiple Docker images stored with different tags (latest and commit hashes) showing successful pushes from CodeBuild.
 
 ---
 
-### 🪣 4️⃣ CloudWatch Build Logs
+### 🐳 3️⃣ ECR Image Details & Vulnerability Scan
+![ECR Image Details](./screenshot/0c-ecr-image-details.png)  
+> ✅ Docker image details displaying size, digest, and vulnerability scan results.
+
+---
+
+### 🏗️ 4️⃣ CodeBuild Project Overview
+![CodeBuild Project Overview](./screenshot/01-codebuild-project-overview.png)  
+> ✅ CodeBuild project `brain-tasks-build` configured with GitHub source and privileged Docker mode enabled.
+
+---
+
+### 🏗️ 5️⃣ CodeBuild Build Trigger
+![CodeBuild Build Trigger](./screenshot/02-codebuild-build-trigger.png)  
+> ✅ Build manually triggered showing source configuration and buildspec.yml file usage.
+
+---
+
+### 🏗️ 6️⃣ CodeBuild Build Success
+![CodeBuild Build Success](./screenshot/03-codebuild-build-success.png)  
+> ✅ Successful build execution with all phases (PRE_BUILD, BUILD, POST_BUILD) completed.
+
+---
+
+### 🏗️ 7️⃣ CodeBuild Detailed Build Logs
+![CodeBuild Build Success Logs](./screenshot/04-codebuild-build-success-logs.png)  
+> ✅ Complete build logs showing Docker image build, ECR push, and Kubernetes deployment.
+
+---
+
+### 🔄 8️⃣ CodePipeline Overview
+![CodePipeline Overview](./screenshot/codepipeline-overview.png)  
+> ✅ Complete CI/CD pipeline configured with Source (GitHub) and Build (CodeBuild) stages.
+
+---
+
+### 🔄 9️⃣ CodePipeline Execution Flow
+![CodePipeline Execution Flow](./screenshot/codepipeline-execution-flow.png)  
+> ✅ Pipeline execution flow showing both stages succeeded with timestamps and duration.
+
+---
+
+### 🔄 🔟 CodePipeline Execution History
+![CodePipeline Execution History](./screenshot/codepipeline-execution-history.png)  
+> ✅ Multiple successful pipeline executions proving automated triggers from GitHub commits.
+
+---
+
+### 🚀 1️⃣1️⃣ Git Push Trigger
+![Git Push Trigger CICD](./screenshot/0p-git-push-trigger-CICD.png)  
+> ✅ Code commit and push to GitHub initiating the automated CI/CD pipeline.
+
+---
+
+### 🚀 1️⃣2️⃣ Pipeline Auto-Triggered
+![Pipeline Auto-Triggered](./screenshot/0q-pipeline-auto-triggered.png)  
+> ✅ CodePipeline automatically triggered within seconds of GitHub push.
+
+---
+
+### 🚀 1️⃣3️⃣ Build Stage Running
+![Build Stage Running](./screenshot/0r-build-stage-running.png)  
+> ✅ Build stage executing with CodeBuild compiling Docker image and deploying to Kubernetes.
+
+---
+
+### 🚀 1️⃣4️⃣ Pipeline Complete Success
+![Pipeline Complete Success](./screenshot/0s-pipeline-complete-success.png)  
+> ✅ End-to-end pipeline execution completed successfully in 8-12 minutes.
+
+---
+
+### 🚀 1️⃣5️⃣ Kubernetes Rollout Complete
+![Kubernetes Rollout Complete](./screenshot/0t-kubernetes-rollout-complete.png)  
+> ✅ Kubernetes rolling update completed with zero downtime deployment.
+
+---
+
+### ☸️ 1️⃣6️⃣ EKS Cluster Overview
+![EKS Cluster Overview](./screenshot/eks-cluster-overview.png)  
+> ✅ EKS cluster `brain-tasks-cluster` running with 2 worker nodes in Ready state.
+
+---
+
+### ☸️ 1️⃣7️⃣ Brain Tasks Cluster Instance
+![Brain Tasks Cluster Instance](./screenshot/brain-tasks-cluster-instance.png)  
+> ✅ Detailed cluster information showing active status and Kubernetes version.
+
+---
+
+### ☸️ 1️⃣8️⃣ Kubectl Get All Resources
+![Kubectl Get All](./screenshot/kubectl-get-all.png)  
+> ✅ All Kubernetes resources including Deployment (2/2 ready), Pods (Running), and LoadBalancer Service.
+
+---
+
+### ☸️ 1️⃣9️⃣ Kubectl Deployment Details
+![Kubectl Deployment Details](./screenshot/kubectl-deployment-details.png)  
+> ✅ Deployment configuration showing 2 replicas and rolling update strategy.
+
+---
+
+### 🪵 2️⃣0️⃣ CloudWatch Log Groups
+![CloudWatch Log Groups](./screenshot/cloudwatch-log-groups.png)  
+> ✅ CloudWatch log groups configured for CodeBuild and application monitoring.
+
+---
+
+### 🪵 2️⃣1️⃣ CloudWatch Build Logs
 ![CloudWatch Build Log](./screenshot/cloudWatch-build-log.png)  
-> ✅ CodeBuild and CodePipeline build logs confirm that the latest build and deployment completed successfully.
+> ✅ Detailed build execution logs stored in CloudWatch for auditing and debugging.
 
 ---
 
-### 🔍 5️⃣ Automated Health Check Script Output
+### 🪵 2️⃣2️⃣ CloudWatch Application Logs
+![CloudWatch Application Log](./screenshot/cloudWatch-application-log.png)  
+> ✅ Application runtime logs showing clean execution with no errors.
+
+---
+
+### 🧠 2️⃣3️⃣ Application UI - Live
+![Application UI](./screenshot/app-ui.png)  
+> ✅ Brain Tasks App successfully deployed and accessible via LoadBalancer URL.
+
+---
+
+### ✅ 2️⃣4️⃣ Automated Health Check Verification
 ![Health Check Script Output](./screenshot/health_check_script-output.png)  
-> ✅ The automated validation script verifies all resources — EKS, Pods, Service, ECR, CodePipeline, and CloudWatch — are healthy and operational.
+> ✅ Comprehensive health check validates all AWS resources are operational.
 
-echo "<!-- CI/CD Test $(date) -->" >> dist/index.html
+---
 
+### 🏗️ 2️⃣5️⃣ Brain Tasks Build Verification
+![Brain Tasks Build](./screenshot/brain-tasks-build.png)  
+> ✅ Final build output confirming successful Docker image creation and deployment.
 
+---
+
+## 📋 Deployment Summary
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **ECR Repository** | ✅ Active | Images with vulnerability scanning |
+| **CodeBuild** | ✅ Configured | Automated builds with Docker & kubectl |
+| **CodePipeline** | ✅ Running | Auto-triggers on GitHub push |
+| **EKS Cluster** | ✅ Active | 2 nodes, 2 pod replicas |
+| **LoadBalancer** | ✅ Live | Public URL serving traffic |
+| **CloudWatch** | ✅ Enabled | Complete monitoring & logging |
+| **CI/CD Flow** | ✅ Automated | 8-12 min deployment time |
+
+---

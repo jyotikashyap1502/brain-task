@@ -1,0 +1,187 @@
+ Manual Testing Instructions
+✅ Test 1: Check Application in Browser
+Open your browser and visit:
+http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+Expected Result:
+
+Page loads successfully
+You see the Brain Tasks application
+No errors in browser console (F12)
+Page title shows "Brain Task"
+
+
+✅ Test 2: Test with curl (Command Line)
+bash curl http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+Expected Result:
+html<!doctype html>
+<html lang="en">
+  <head>
+    <title>Brain Task</title>
+    ...
+
+✅ Test 3: Check HTTP Status
+bash curl -I http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+```
+
+**Expected Result:**
+```
+HTTP/1.1 200 OK
+Content-Type: text/html
+
+✅ Test 4: Verify Kubernetes Pods are Running
+bash kubectl get pods -l app=brain-tasks
+```
+
+**Expected Result:**
+```
+NAME                                      READY   STATUS    RESTARTS   AGE
+brain-tasks-deployment-54d75b664b-66bnm   1/1     Running   0          2d
+brain-tasks-deployment-54d75b664b-sswn6   1/1     Running   0          2d
+
+✅ Test 5: Check Deployment Status
+bashkubectl get deployment brain-tasks-deployment
+```
+
+**Expected Result:**
+```
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+brain-tasks-deployment   2/2     2            2           2d
+
+✅ Test 6: Verify LoadBalancer Service
+bashkubectl get svc brain-tasks-service
+```
+
+**Expected Result:**
+```
+NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP                                                              PORT(S)        AGE
+brain-tasks-service   LoadBalancer   10.100.25.172   ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com   80:32213/TCP   2d
+
+✅ Test 7: Check Pod Logs (No Errors)
+bashkubectl logs -l app=brain-tasks --tail=50
+Expected Result:
+
+No error messages
+Nginx access logs showing requests
+No crash loops
+
+
+✅ Test 8: Verify Pod Health
+bashkubectl get pods -l app=brain-tasks -o jsonpath='{.items[*].status.phase}'
+```
+
+**Expected Result:**
+```
+Running Running
+
+✅ Test 9: Test LoadBalancer from Multiple Locations
+bash# Test DNS resolution
+nslookup ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+
+DNS resolves successfully
+
+
+✅ Test 10: Verify EKS Cluster Health
+bashkubectl get nodes
+```
+
+**Expected Result:**
+```
+NAME                             STATUS   ROLES    AGE   VERSION
+ip-192-168-x-x.ec2.internal      Ready    <none>   2d    v1.27.x
+ip-192-168-x-x.ec2.internal      Ready    <none>   2d    v1.27.x
+
+✅ Test 11: Check ECR Image
+bashaws ecr describe-images --repository-name brain-tasks-app --region ap-south-1
+Expected Result:
+
+Shows list of images
+Latest tag exists
+Recent push timestamp
+
+
+✅ Test 12: Verify CI/CD Pipeline
+bashaws codepipeline get-pipeline-state --name brain-tasks-pipeline --region ap-south-1
+Expected Result:
+json{
+    "pipelineName": "brain-tasks-pipeline",
+    "stageStates": [
+        {
+            "stageName": "Source",
+            "latestExecution": {
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "Build",
+            "latestExecution": {
+                "status": "Succeeded"
+            }
+        }
+    ]
+}
+
+✅ Test 13: Check CloudWatch Logs
+bashaws logs tail /aws/codebuild/brain-tasks-build --since 1h --region ap-south-1
+Expected Result:
+
+Recent build logs visible
+No error messages
+Shows successful deployment
+
+
+✅ Test 14: Test Application Responsiveness
+In browser, check:
+
+✅ Page loads in < 3 seconds
+✅ All images/assets load
+✅ No console errors
+✅ Interactive elements work
+✅ Responsive on mobile/tablet
+
+
+✅ Test 15: Verify All Resources Exist
+bash# Check all Kubernetes resources
+kubectl get all
+
+# Expected: deployment, 2 pods, 1 service, 1 replicaset - all running/available
+
+📊 Quick Health Check Summary
+Run all these commands in sequence:
+bash# 1. Check pods
+kubectl get pods -l app=brain-tasks
+
+# 2. Check deployment
+kubectl get deployment brain-tasks-deployment
+
+# 3. Check service
+kubectl get svc brain-tasks-service
+
+# 4. Test application
+curl -I http://ad298fe685d5f43509fc92ad2350a0f6-641131410.ap-south-1.elb.amazonaws.com
+
+# 5. Check pod health
+kubectl get pods -l app=brain-tasks -o jsonpath='{.items[*].status.phase}'
+All 5 should return positive results = ✅ Application is running fine!
+
+❌ If Something Fails
+Pod not running?
+bashkubectl describe pod <pod-name>
+kubectl logs <pod-name>
+LoadBalancer not accessible?
+bashkubectl describe svc brain-tasks-service
+Application returns errors?
+bashkubectl logs -l app=brain-tasks --tail=100
+
+✅ Final Confirmation
+If all these are true, your application is running perfectly:
+
+✅ Browser opens the application
+✅ curl returns HTTP 200 OK
+✅ 2 pods showing "Running" status
+✅ Deployment shows 2/2 READY
+✅ LoadBalancer has EXTERNAL-IP
+✅ No errors in pod logs
+✅ Pipeline shows "Succeeded"
+
+Your Brain Tasks App is live and working! 🎉RetryMPeverything working fine- 
