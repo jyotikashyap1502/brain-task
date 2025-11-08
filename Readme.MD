@@ -1353,5 +1353,6 @@ All infrastructure and application checks are automated via a custom health chec
 ![Health Check Script Output](./screenshot/health_check_script-output.png)  
 > ✅ The automated validation script verifies all resources — EKS, Pods, Service, ECR, CodePipeline, and CloudWatch — are healthy and operational.
 
+echo "<!-- CI/CD Test $(date) -->" >> dist/index.html
 
 
